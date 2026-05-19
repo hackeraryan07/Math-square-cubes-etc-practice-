@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Squares Practice App</title>
+  
+  <!-- Fonts: Inter for UI, Space Mono for Numbers -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Space+Mono:wght@700&display=swap" rel="stylesheet">
+  
+  <!-- Tailwind CSS for Professional Styling -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Tailwind Configuration -->
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['Space Mono', 'monospace'],
+          },
+          colors: {
+            brand: {
+              400: '#818cf8', // Indigo 400
+              500: '#6366f1', // Indigo 500
+              600: '#4f46e5', // Indigo 600
+            },
+            dark: {
+              bg: '#0f172a',    // Slate 900
+              card: '#1e293b',  // Slate 800
+              cardHover: '#334155' // Slate 700
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body {
+      background-color: #0f172a;
+      color: #f8fafc;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+
+    /* Custom Scrollbar hide */
+    ::-webkit-scrollbar { display: none; }
+
+    /* Animations */
+    @keyframes pop {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.15); }
+      100% { transform: scale(1); }
+    }
+    .animate-pop { animation: pop 0.3s ease-out forwards; }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20% { transform: translateX(-6px); }
+      40% { transform: translateX(6px); }
+      60% { transform: translateX(-4px); }
+      80% { transform: translateX(4px); }
+    }
+    .animate-shake { animation: shake 0.4s ease-in-out; }
+
+    /* Numpad Button Effects */
+    .numpad-btn {
+      background-color: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 16px;
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: #f8fafc;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 64px;
+      transition: all 0.1s ease;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+    .numpad-btn:active {
+      transform: scale(0.92);
+      background-color: #334155;
+    }
+
+    /* Answer Input Display */
+    .answer-display {
+      transition: all 0.2s ease;
+    }
+    .answer-display.correct {
+      background-color: rgba(52, 211, 153, 0.1);
+      border-color: #34d399;
+      color: #34d399;
+      box-shadow: 0 0 0 4px rgba(52, 211, 153, 0.2);
+    }
+    .answer-display.wrong {
+      background-color: rgba(248, 113, 113, 0.1);
+      border-color: #f87171;
+      color: #f87171;
+      box-shadow: 0 0 0 4px rgba(248, 113, 113, 0.2);
+    }
+
+    /* Progress Bar Smooth Transition */
+    #timer-fill {
+      transition: width linear;
+    }
+  </style>
+</head>
+<body class="min-h-[100dvh] flex flex-col items-center justify-center p-4">
+
+  <!-- Main App Container -->
+  <div class="w-full max-w-md relative flex-1 flex flex-col">
+
+    <!-- Toast Notification (Hidden by default) -->
+    <div id="toast" class="absolute top-0 left-0 right-0 z-50 transform -translate-y-full opacity-0 transition-all duration-300 pointer-events-none">
+      <div class="bg-rose-500 text-white text-sm font-semibold px-4 py-3 rounded-xl shadow-lg text-center" id="toast-msg">
+        Message
+      </div>
+    </div>
+
+    <!-- ==========================================
+         VIEW: HOME
+         ========================================== -->
+    <div id="view-home" class="flex flex-col flex-1 items-center justify-center space-y-8 animate-fade-in">
+      
+      <!-- Logo/Header -->
+      <div class="text-center space-y-2">
+        <div class="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-brand-500/20 text-brand-400 mb-4 shadow-[0_0_40px_rgba(99,102,241,0.2)]">
+          <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" fill="currentColor" viewBox="0 0 256 256"><path d="M216,40H40A16,16,0,0,0,24,56V200a16,16,0,0,0,16,16H216a16,16,0,0,0,16-16V56A16,16,0,0,0,216,40Zm0,160H40V56H216V200ZM176,88a8,8,0,0,1-8,8H88a8,8,0,0,1,0-16h80A8,8,0,0,1,176,88Zm0,32a8,8,0,0,1-8,8H88a8,8,0,0,1,0-16h80A8,8,0,0,1,176,120Zm0,32a8,8,0,0,1-8,8H88a8,8,0,0,1,0-16h80A8,8,0,0,1,176,152Z"></path></svg>
+        </div>
+        <h1 class="text-3xl font-extrabold tracking-tight text-white">Math Squares</h1>
+        <p class="text-slate-400 font-medium">Train your brain. Master the grid.</p>
+      </div>
+
+      <!-- Auth Section -->
+      <div class="w-full bg-dark-card border border-slate-700 rounded-2xl p-6 shadow-xl flex flex-col items-center">
+        
+        <!-- Logged Out State -->
+        <div id="auth-logged-out" class="w-full flex flex-col items-center space-y-3">
+          <p class="text-sm text-slate-400 text-center mb-1">Sign in to track your progress globally</p>
+          <button onclick="window.signInWithGoogle()" class="w-full flex items-center justify-center space-x-3 bg-white text-slate-900 font-bold py-3.5 px-4 rounded-xl hover:bg-slate-100 transition-colors shadow-sm active:scale-[0.98]">
+            <svg class="w-5 h-5" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.58c2.08-1.92 3.27-4.74 3.27-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.58-2.77c-.98.66-2.23 1.06-3.7 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+            <span>Continue with Google</span>
+          </button>
+        </div>
+
+        <!-- Logged In State -->
+        <div id="auth-logged-in" class="w-full hidden flex-col items-center space-y-4">
+          <div class="flex items-center space-x-4 w-full bg-slate-900/50 p-3 rounded-xl border border-slate-700/50">
+            <img id="user-avatar" src="" alt="Profile" class="w-12 h-12 rounded-full border-2 border-brand-500 object-cover" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iIzk0YTNiOCI+PHBhdGggZD0iTTEyIDJDMiAxMiA2LjQ4IDEyIDEyIDEyczEwLTQuNDggMTAtMTBTMTcuNTIgMiAxMiAyem0wIDNjMS42NiAwIDMgMS4zNCAzIDNzLTEuMzQgMy0zIDMtMy0xLjM0LTMtM3MxLjM0LTMgMy0zem0wIDE0LjJjLTIuNSAwLTQuNzEtMS4yOC02LTIuMjIuMDMtMS45OSA0LTMuMDggNi0zLjA4IDEuOTkgMCA1Ljk3IDEuMDkgNiAzLjA4LTEuMjkuOTQtMy41IDIuMjItNiAyLjIyeiIvPjwvc3ZnPg=='" />
+            <div class="flex-1 overflow-hidden">
+              <p class="text-sm text-slate-400 font-medium">Welcome back,</p>
+              <p id="user-name" class="font-bold text-white truncate">Player</p>
+            </div>
+            <button onclick="window.logout()" class="p-2 text-slate-400 hover:text-rose-400 transition-colors">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 256 256"><path d="M120,216a8,8,0,0,1-8,8H48a8,8,0,0,1-8-8V40a8,8,0,0,1,8-8h64a8,8,0,0,1,0,16H56V208h56A8,8,0,0,1,120,216Zm109.66-93.66-40-40a8,8,0,0,0-11.32,11.32L204.69,120H104a8,8,0,0,0,0,16H204.69l-26.35,26.34a8,8,0,0,0,11.32,11.32l40-40A8,8,0,0,0,229.66,122.34Z"></path></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main Call to Action -->
+      <button onclick="window.showView('view-setup')" class="w-full bg-brand-500 hover:bg-brand-400 text-white font-extrabold text-lg py-4 px-6 rounded-2xl shadow-[0_4px_20px_rgba(99,102,241,0.4)] transition-all active:scale-[0.97] flex items-center justify-center space-x-2 border border-brand-400/50">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 256 256"><path d="M232.4,114.49l-128-80a8,8,0,0,0-12.4,6.79V214.72a8,8,0,0,0,12.4,6.79l128-80A8,8,0,0,0,232.4,114.49ZM108,193.34V62.66L212.55,128Z"></path></svg>
+        <span>Practice Squares</span>
+      </button>
+
+    </div>
+
+
+    <!-- ==========================================
+         VIEW: SETUP
+         ========================================== -->
+    <div id="view-setup" class="hidden flex-col flex-1 py-6 space-y-6 animate-fade-in">
+      
+      <div class="flex items-center justify-between">
+        <button onclick="window.showView('view-home')" class="p-2 text-slate-400 hover:text-white transition-colors bg-dark-card rounded-xl border border-slate-700">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 256 256"><path d="M224,128a8,8,0,0,1-8,8H59.31l58.35,58.34a8,8,0,0,1-11.32,11.32l-72-72a8,8,0,0,1,0-11.32l72-72a8,8,0,0,1,11.32,11.32L59.31,120H216A8,8,0,0,1,224,128Z"></path></svg>
+        </button>
+        <h2 class="text-xl font-bold text-white tracking-wide uppercase">Setup Game</h2>
+        <div class="w-10"></div> <!-- spacer -->
+      </div>
+
+      <div class="bg-dark-card border border-slate-700 rounded-3xl p-6 shadow-xl space-y-8">
+        
+        <!-- Range -->
+        <div class="space-y-3">
+          <label class="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center space-x-2">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 256 256"><path d="M248,104v48a8,8,0,0,1-16,0V112H216v88a16,16,0,0,1-16,16H56a16,16,0,0,1-16-16V112H24a8,8,0,0,1,0-16H232A16,16,0,0,1,248,104ZM56,200H200V112H56Z"></path></svg>
+            <span>Number Range</span>
+          </label>
+          <div class="flex items-center space-x-4">
+            <div class="flex-1 relative">
+              <span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 font-bold text-sm">From</span>
+              <input type="number" id="range-from" value="2" min="1" max="99" class="w-full bg-slate-900 border-2 border-slate-700 rounded-xl py-3 pl-14 pr-4 font-mono text-xl text-white outline-none focus:border-brand-500 transition-colors" />
+            </div>
+            <div class="flex-1 relative">
+              <span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 font-bold text-sm">To</span>
+              <input type="number" id="range-to" value="20" min="1" max="99" class="w-full bg-slate-900 border-2 border-slate-700 rounded-xl py-3 pl-10 pr-4 font-mono text-xl text-white outline-none focus:border-brand-500 transition-colors" />
+            </div>
+          </div>
+        </div>
+
+        <!-- Time per Question -->
+        <div class="space-y-3">
+          <label class="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center space-x-2">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 256 256"><path d="M128,24A104,104,0,1,0,232,128,104.11,104.11,0,0,0,128,24Zm0,192a88,88,0,1,1,88-88A88.1,88.1,0,0,1,128,216Zm64-88a8,8,0,0,1-8,8H128a8,8,0,0,1-8-8V72a8,8,0,0,1,16,0v48h48A8,8,0,0,1,192,128Z"></path></svg>
+            <span>Time per Question</span>
+          </label>
+          <div class="grid grid-cols-5 gap-2">
+            <button class="timer-btn active bg-brand-500 border-brand-400 text-white font-bold py-2 rounded-lg border text-sm transition-all shadow-[0_0_15px_rgba(99,102,241,0.3)]" data-sec="5">5s</button>
+            <button class="timer-btn bg-slate-900 border-slate-700 text-slate-400 font-semibold py-2 rounded-lg border text-sm transition-all" data-sec="10">10s</button>
+            <button class="timer-btn bg-slate-900 border-slate-700 text-slate-400 font-semibold py-2 rounded-lg border text-sm transition-all" data-sec="15">15s</button>
+            <button class="timer-btn bg-slate-900 border-slate-700 text-slate-400 font-semibold py-2 rounded-lg border text-sm transition-all" data-sec="30">30s</button>
+            <button class="timer-btn bg-slate-900 border-slate-700 text-slate-400 font-semibold py-2 rounded-lg border text-sm transition-all" data-sec="0">∞</button>
+          </div>
+        </div>
+
+        <!-- Total Questions -->
+        <div class="space-y-3">
+          <label class="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center space-x-2">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 256 256"><path d="M224,128a96,96,0,1,1-96-96A96.11,96.11,0,0,1,224,128Z" opacity="0.2"></path><path d="M128,24A104,104,0,1,0,232,128,104.11,104.11,0,0,0,128,24Zm0,192a88,88,0,1,1,88-88A88.1,88.1,0,0,1,128,216Zm-8-80V80a8,8,0,0,1,16,0v56a8,8,0,0,1-16,0Zm20,48a12,12,0,1,1-12-12A12,12,0,0,1,140,184Z"></path></svg>
+            <span>Total Questions</span>
+          </label>
+          <div class="grid grid-cols-5 gap-2">
+            <button class="q-btn bg-slate-900 border-slate-700 text-slate-400 font-semibold py-2 rounded-lg border text-sm transition-all" data-q="5">5</button>
+            <button class="q-btn active bg-brand-500 border-brand-400 text-white font-bold py-2 rounded-lg border text-sm transition-all shadow-[0_0_15px_rgba(99,102,241,0.3)]" data-q="10">10</button>
+            <button class="q-btn bg-slate-900 border-slate-700 text-slate-400 font-semibold py-2 rounded-lg border text-sm transition-all" data-q="15">15</button>
+            <button class="q-btn bg-slate-900 border-slate-700 text-slate-400 font-semibold py-2 rounded-lg border text-sm transition-all" data-q="20">20</button>
+            <button class="q-btn bg-slate-900 border-slate-700 text-slate-400 font-semibold py-2 rounded-lg border text-sm transition-all" data-q="0">∞</button>
+          </div>
+        </div>
+
+      </div>
+
+      <button onclick="window.startGame()" class="w-full bg-brand-500 hover:bg-brand-400 text-white font-bold text-lg py-4 rounded-2xl shadow-[0_4px_20px_rgba(99,102,241,0.4)] transition-all active:scale-[0.97] mt-auto">
+        Start Game 🚀
+      </button>
+
+    </div>
+
+
+    <!-- ==========================================
+         VIEW: GAME
+         ========================================== -->
+    <div id="view-game" class="hidden flex-col flex-1 py-4 justify-between animate-fade-in">
+      
+      <!-- Top Bar -->
+      <div class="flex items-center justify-between mb-4">
+        <!-- Quit / Back -->
+        <button onclick="window.quitGame()" class="p-2 text-slate-500 hover:text-rose-400 transition-colors bg-dark-card rounded-xl border border-slate-700 shadow-sm">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 256 256"><path d="M205.66,194.34a8,8,0,0,1-11.32,11.32L128,139.31,61.66,205.66a8,8,0,0,1-11.32-11.32L116.69,128,50.34,61.66A8,8,0,0,1,61.66,50.34L128,116.69l66.34-66.35a8,8,0,0,1,11.32,11.32L139.31,128Z"></path></svg>
+        </button>
+
+        <!-- Status Pills -->
+        <div class="flex space-x-2">
+          <div class="bg-dark-card border border-slate-700 rounded-full px-4 py-1.5 flex items-center space-x-2 shadow-sm">
+            <span class="text-xs font-bold text-slate-400 uppercase tracking-wide">Q</span>
+            <span class="font-mono font-bold text-brand-400 text-sm" id="q-counter">1/10</span>
+          </div>
+          <div class="bg-dark-card border border-slate-700 rounded-full px-4 py-1.5 flex items-center space-x-2 shadow-sm" id="timer-pill">
+            <span class="text-xs font-bold text-slate-400">⏱</span>
+            <span class="font-mono font-bold text-rose-400 text-sm"><span id="timer-val">15</span>s</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Timer Progress Bar -->
+      <div class="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden mb-6" id="timer-bar-wrap">
+        <div class="h-full bg-brand-500 rounded-full" id="timer-fill" style="width: 100%;"></div>
+      </div>
+
+      <!-- Question Area -->
+      <div class="flex-1 flex flex-col items-center justify-center">
+        <div class="text-slate-400 text-xs font-bold uppercase tracking-widest mb-4">What is the square of</div>
+        <div class="relative">
+          <!-- Background Glow -->
+          <div class="absolute inset-0 bg-brand-500/20 blur-3xl rounded-full w-32 h-32 mx-auto"></div>
+          <div class="font-mono font-bold text-7xl text-white drop-shadow-[0_0_20px_rgba(99,102,241,0.5)] relative z-10 flex items-start" id="q-number-wrap">
+            <span id="q-number">12</span>
+            <span class="text-4xl text-slate-500 mt-1 ml-1">²</span>
+          </div>
+        </div>
+        <div class="text-slate-500 font-bold text-2xl mt-4">=</div>
+      </div>
+
+      <!-- Input Display -->
+      <div class="w-full mt-4 mb-4">
+        <div id="answer-display" class="answer-display w-full bg-dark-card border-2 border-slate-700 rounded-2xl h-16 flex items-center justify-center font-mono text-3xl font-bold tracking-widest shadow-inner relative overflow-hidden">
+          <!-- Placeholder / Typed Text -->
+          <span id="answer-text" class="text-slate-500 opacity-50">?</span>
+          <!-- Feedback overlay (hidden by default) -->
+          <div id="feedback-overlay" class="absolute inset-0 flex items-center justify-center font-sans text-sm font-bold opacity-0 transition-opacity"></div>
+        </div>
+      </div>
+
+      <!-- Custom Numpad -->
+      <div class="w-full grid grid-cols-3 gap-2">
+        <button class="numpad-btn" onclick="window.numpadPress('1')">1</button>
+        <button class="numpad-btn" onclick="window.numpadPress('2')">2</button>
+        <button class="numpad-btn" onclick="window.numpadPress('3')">3</button>
+        <button class="numpad-btn" onclick="window.numpadPress('4')">4</button>
+        <button class="numpad-btn" onclick="window.numpadPress('5')">5</button>
+        <button class="numpad-btn" onclick="window.numpadPress('6')">6</button>
+        <button class="numpad-btn" onclick="window.numpadPress('7')">7</button>
+        <button class="numpad-btn" onclick="window.numpadPress('8')">8</button>
+        <button class="numpad-btn" onclick="window.numpadPress('9')">9</button>
+        
+        <!-- Action Row -->
+        <button class="numpad-btn text-rose-400 text-lg" onclick="window.numpadClear()">C</button>
+        <button class="numpad-btn" onclick="window.numpadPress('0')">0</button>
+        <button class="numpad-btn text-brand-400" onclick="window.numpadDelete()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="currentColor" viewBox="0 0 256 256"><path d="M216,40H74a16,16,0,0,0-12.27,5.69L11.51,105.15a16,16,0,0,0,0,21.7l50.22,59.46A16,16,0,0,0,74,192H216a16,16,0,0,0,16-16V56A16,16,0,0,0,216,40Zm0,136H74L25.32,116,74,56H216V176Zm-34.34-85.66a8,8,0,0,1,11.31,11.31L168.34,126l24.63,24.63a8,8,0,0,1-11.31,11.31L157,137.31l-24.63,24.63a8,8,0,0,1-11.31-11.31L145.69,126l-24.63-24.63a8,8,0,0,1,11.31-11.31L157,114.69Z"></path></svg>
+        </button>
+      </div>
+
+      <!-- Submit Button -->
+      <button class="w-full bg-brand-500 hover:bg-brand-400 text-white font-bold py-4 rounded-xl shadow-[0_4px_15px_rgba(99,102,241,0.3)] transition-all active:scale-[0.98] mt-2" onclick="window.submitAnswer()">
+        Submit Answer
+      </button>
+
+    </div>
+
+
+    <!-- ==========================================
+         VIEW: RESULT
+         ========================================== -->
+    <div id="view-result" class="hidden flex-col flex-1 py-6 space-y-6 animate-fade-in justify-center">
+      
+      <div class="bg-dark-card border border-slate-700 rounded-3xl p-8 shadow-2xl text-center relative overflow-hidden">
+        <!-- Deco -->
+        <div class="absolute -top-16 -right-16 w-32 h-32 bg-brand-500/20 blur-3xl rounded-full"></div>
+        <div class="absolute -bottom-16 -left-16 w-32 h-32 bg-emerald-500/20 blur-3xl rounded-full"></div>
+        
+        <div class="text-6xl mb-4 relative z-10" id="result-emoji">🏆</div>
+        <h2 class="text-2xl font-black text-white mb-1 relative z-10" id="result-title">Amazing!</h2>
+        <p class="text-slate-400 text-sm font-medium mb-6 relative z-10" id="result-sub">You crushed it!</p>
+
+        <!-- Detailed Stats (Only shown here now) -->
+        <div class="grid grid-cols-2 gap-3 relative z-10">
+          
+          <div class="col-span-2 bg-slate-900/50 border border-slate-700/50 rounded-2xl p-4 flex flex-col items-center">
+            <div class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Accuracy</div>
+            <div class="font-mono text-4xl font-black text-brand-400" id="res-accuracy">100%</div>
+          </div>
+
+          <div class="bg-slate-900/50 border border-slate-700/50 rounded-2xl p-3 flex flex-col items-center">
+            <div class="text-[0.65rem] font-bold text-slate-400 uppercase tracking-widest mb-1 flex items-center space-x-1">
+              <span class="text-emerald-400">✅</span> <span>Correct</span>
+            </div>
+            <div class="font-mono text-2xl font-bold text-white" id="res-correct">0</div>
+          </div>
+
+          <div class="bg-slate-900/50 border border-slate-700/50 rounded-2xl p-3 flex flex-col items-center">
+            <div class="text-[0.65rem] font-bold text-slate-400 uppercase tracking-widest mb-1 flex items-center space-x-1">
+              <span class="text-rose-400">❌</span> <span>Wrong</span>
+            </div>
+            <div class="font-mono text-2xl font-bold text-white" id="res-wrong">0</div>
+          </div>
+
+          <div class="bg-slate-900/50 border border-slate-700/50 rounded-2xl p-3 flex flex-col items-center">
+            <div class="text-[0.65rem] font-bold text-slate-400 uppercase tracking-widest mb-1 flex items-center space-x-1">
+              <span class="text-amber-400">🔥</span> <span>Best Streak</span>
+            </div>
+            <div class="font-mono text-2xl font-bold text-white" id="res-streak">0</div>
+          </div>
+
+          <div class="bg-slate-900/50 border border-slate-700/50 rounded-2xl p-3 flex flex-col items-center">
+            <div class="text-[0.65rem] font-bold text-slate-400 uppercase tracking-widest mb-1 flex items-center space-x-1">
+              <span class="text-slate-400">📐</span> <span>Range</span>
+            </div>
+            <div class="font-mono text-xl font-bold text-white mt-1" id="res-range">2-20</div>
+          </div>
+
+        </div>
+      </div>
+
+      <div class="flex space-x-3 w-full">
+        <button onclick="window.showView('view-setup')" class="flex-1 bg-dark-card border border-slate-700 text-slate-300 font-bold py-4 rounded-2xl hover:bg-slate-800 transition-colors shadow-sm active:scale-[0.98]">
+          ⚙️ Setup
+        </button>
+        <button onclick="window.startGame()" class="flex-[2] bg-brand-500 hover:bg-brand-400 text-white font-bold py-4 rounded-2xl shadow-[0_4px_15px_rgba(99,102,241,0.3)] transition-all active:scale-[0.98]">
+          Play Again 🚀
+        </button>
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- Application Logic -->
+  <script type="module">
+    // ==========================================
+    // FIREBASE AUTHENTICATION (Google Sign-In)
+    // ==========================================
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { 
+      getAuth, 
+      signInWithPopup, 
+      GoogleAuthProvider, 
+      onAuthStateChanged, 
+      signOut 
+    } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCLEq5-YtYkvJAPmQoy3oi6i78J0yrG-KY",
+      authDomain: "tic-tac-toe-11a82.firebaseapp.com",
+      databaseURL: "https://tic-tac-toe-11a82-default-rtdb.firebaseio.com",
+      projectId: "tic-tac-toe-11a82",
+      storageBucket: "tic-tac-toe-11a82.firebasestorage.app",
+      messagingSenderId: "663702525330",
+      appId: "1:663702525330:web:91137c9f1134dd87441d4b"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const provider = new GoogleAuthProvider();
+
+    // Listen for Auth changes to update Home Screen UI
+    onAuthStateChanged(auth, (user) => {
+      const loggedOutDiv = document.getElementById('auth-logged-out');
+      const loggedInDiv = document.getElementById('auth-logged-in');
+      
+      if (user) {
+        loggedOutDiv.classList.add('hidden');
+        loggedInDiv.classList.remove('hidden');
+        loggedInDiv.classList.add('flex');
+        
+        document.getElementById('user-name').textContent = user.displayName || 'Player';
+        if(user.photoURL) {
+          document.getElementById('user-avatar').src = user.photoURL;
+        }
+      } else {
+        loggedInDiv.classList.add('hidden');
+        loggedInDiv.classList.remove('flex');
+        loggedOutDiv.classList.remove('hidden');
+      }
+    });
+
+    window.signInWithGoogle = async () => {
+      try {
+        await signInWithPopup(auth, provider);
+      } catch (error) {
+        console.error("Auth Error:", error);
+        // Fallback info if running in a restricted environment
+        showToast("Sign in blocked by browser. Run file locally.");
+      }
+    };
+
+    window.logout = async () => {
+      try {
+        await signOut(auth);
+      } catch (error) {
+        console.error("Logout Error", error);
+      }
+    };
+
+    // Helper: Show brief error toast without using alert()
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      document.getElementById('toast-msg').textContent = msg;
+      toast.classList.remove('-translate-y-full', 'opacity-0');
+      setTimeout(() => {
+        toast.classList.add('-translate-y-full', 'opacity-0');
+      }, 3000);
+    }
+
+    // ==========================================
+    // GAME STATE & LOGIC
+    // ==========================================
+    let state = {
+      selectedTime: 5,
+      selectedQ: 10,
+      currentNumber: 0,
+      correctCount: 0,
+      wrongCount: 0,
+      streak: 0,
+      bestStreak: 0,
+      questionNum: 0,
+      timerInterval: null,
+      timeLeft: 0,
+      answered: false,
+      currentInput: ""
+    };
+
+    // Navigation function
+    window.showView = (viewId) => {
+      ['view-home', 'view-setup', 'view-game', 'view-result'].forEach(id => {
+        const el = document.getElementById(id);
+        el.classList.add('hidden');
+        el.classList.remove('flex');
+      });
+      const target = document.getElementById(viewId);
+      target.classList.remove('hidden');
+      target.classList.add('flex');
+    };
+
+    // Setup Listeners for Timer and Question toggle buttons
+    document.querySelectorAll('.timer-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.timer-btn').forEach(b => {
+          b.className = 'timer-btn bg-slate-900 border-slate-700 text-slate-400 font-semibold py-2 rounded-lg border text-sm transition-all';
+        });
+        btn.className = 'timer-btn active bg-brand-500 border-brand-400 text-white font-bold py-2 rounded-lg border text-sm transition-all shadow-[0_0_15px_rgba(99,102,241,0.3)]';
+        state.selectedTime = parseInt(btn.dataset.sec);
+      });
+    });
+
+    document.querySelectorAll('.q-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.q-btn').forEach(b => {
+          b.className = 'q-btn bg-slate-900 border-slate-700 text-slate-400 font-semibold py-2 rounded-lg border text-sm transition-all';
+        });
+        btn.className = 'q-btn active bg-brand-500 border-brand-400 text-white font-bold py-2 rounded-lg border text-sm transition-all shadow-[0_0_15px_rgba(99,102,241,0.3)]';
+        state.selectedQ = parseInt(btn.dataset.q);
+      });
+    });
+
+    // Keyboard support for desktop users
+    document.addEventListener('keydown', (e) => {
+      if (document.getElementById('view-game').classList.contains('hidden')) return;
+      if (state.answered) return;
+      
+      if (e.key >= '0' && e.key <= '9') window.numpadPress(e.key);
+      if (e.key === 'Backspace') window.numpadDelete();
+      if (e.key === 'Escape') window.numpadClear();
+      if (e.key === 'Enter') window.submitAnswer();
+    });
+
+    // --- Numpad Actions ---
+    window.numpadPress = (numStr) => {
+      if (state.answered) return;
+      if (state.currentInput.length >= 5) return; // Prevent massive numbers
+      state.currentInput += numStr;
+      updateInputDisplay();
+    };
+
+    window.numpadClear = () => {
+      if (state.answered) return;
+      state.currentInput = '';
+      updateInputDisplay();
+    };
+
+    window.numpadDelete = () => {
+      if (state.answered) return;
+      state.currentInput = state.currentInput.slice(0, -1);
+      updateInputDisplay();
+    };
+
+    function updateInputDisplay() {
+      const display = document.getElementById('answer-text');
+      if (state.currentInput === '') {
+        display.textContent = '?';
+        display.classList.add('text-slate-500', 'opacity-50');
+        display.classList.remove('text-white', 'opacity-100');
+      } else {
+        display.textContent = state.currentInput;
+        display.classList.remove('text-slate-500', 'opacity-50');
+        display.classList.add('text-white', 'opacity-100');
+      }
+    }
+
+    // --- Game Logic ---
+    function getRandNum() {
+      const from = parseInt(document.getElementById('range-from').value) || 2;
+      const to   = parseInt(document.getElementById('range-to').value)   || 20;
+      const lo = Math.min(from, to);
+      const hi = Math.max(from, to);
+      return Math.floor(Math.random() * (hi - lo + 1)) + lo;
+    }
+
+    window.startGame = () => {
+      state.correctCount = 0; 
+      state.wrongCount = 0; 
+      state.streak = 0; 
+      state.bestStreak = 0; 
+      state.questionNum = 0;
+      
+      window.showView('view-game');
+      nextQuestion();
+    };
+
+    function nextQuestion() {
+      if (state.selectedQ > 0 && state.questionNum >= state.selectedQ) {
+        endGame(); 
+        return;
+      }
+      
+      state.questionNum++;
+      state.answered = false;
+      state.currentInput = '';
+      updateInputDisplay();
+
+      // Reset styles
+      const ansDisplay = document.getElementById('answer-display');
+      ansDisplay.className = 'answer-display w-full bg-dark-card border-2 border-slate-700 rounded-2xl h-16 flex items-center justify-center font-mono text-3xl font-bold tracking-widest shadow-inner relative overflow-hidden';
+      const overlay = document.getElementById('feedback-overlay');
+      overlay.style.opacity = '0';
+
+      // Setup Question
+      state.currentNumber = getRandNum();
+      const qNumElWrap = document.getElementById('q-number-wrap');
+      document.getElementById('q-number').textContent = state.currentNumber;
+      
+      // Animate Question pop
+      qNumElWrap.classList.remove('animate-pop');
+      void qNumElWrap.offsetWidth; // trigger reflow
+      qNumElWrap.classList.add('animate-pop');
+
+      // Update Top Bar
+      const total = state.selectedQ > 0 ? state.selectedQ : '∞';
+      document.getElementById('q-counter').textContent = `${state.questionNum}/${total}`;
+
+      // Timer Logic
+      clearInterval(state.timerInterval);
+      if (state.selectedTime > 0) {
+        document.getElementById('timer-pill').style.display = 'flex';
+        document.getElementById('timer-bar-wrap').style.display = 'block';
+        
+        state.timeLeft = state.selectedTime;
+        document.getElementById('timer-val').textContent = state.timeLeft;
+        
+        const timerFill = document.getElementById('timer-fill');
+        timerFill.style.transition = 'none';
+        timerFill.style.width = '100%';
+        void timerFill.offsetWidth;
+        timerFill.style.transition = `width ${state.selectedTime}s linear`;
+        timerFill.style.width = '0%';
+        
+        state.timerInterval = setInterval(() => {
+          state.timeLeft--;
+          document.getElementById('timer-val').textContent = state.timeLeft;
+          if (state.timeLeft <= 0) {
+            clearInterval(state.timerInterval);
+            timeExpired();
+          }
+        }, 1000);
+      } else {
+        document.getElementById('timer-pill').style.display = 'none';
+        document.getElementById('timer-bar-wrap').style.display = 'none';
+      }
+    }
+
+    function timeExpired() {
+      if (state.answered) return;
+      state.answered = true;
+      state.wrongCount++;
+      state.streak = 0;
+      
+      const correctAns = state.currentNumber * state.currentNumber;
+      showFeedback(false, `Time up! = ${correctAns}`);
+      
+      setTimeout(nextQuestion, 1800);
+    }
+
+    window.submitAnswer = () => {
+      if (state.answered || state.currentInput === '') return;
+      
+      clearInterval(state.timerInterval);
+      state.answered = true;
+      
+      const userAns = parseInt(state.currentInput);
+      const correctAns = state.currentNumber * state.currentNumber;
+
+      if (userAns === correctAns) {
+        state.correctCount++;
+        state.streak++;
+        if (state.streak > state.bestStreak) state.bestStreak = state.streak;
+        
+        showFeedback(true, state.streak >= 3 ? `🔥 ${state.streak} in a row!` : 'Correct!');
+        setTimeout(nextQuestion, 800);
+      } else {
+        state.wrongCount++;
+        state.streak = 0;
+        
+        showFeedback(false, `Wrong! = ${correctAns}`);
+        setTimeout(nextQuestion, 1500);
+      }
+    };
+
+    function showFeedback(isCorrect, message) {
+      const ansDisplay = document.getElementById('answer-display');
+      const textNode = document.getElementById('answer-text');
+      const overlay = document.getElementById('feedback-overlay');
+      
+      textNode.style.opacity = '0'; // hide input text
+      
+      overlay.textContent = message;
+      overlay.style.opacity = '1';
+      
+      if (isCorrect) {
+        ansDisplay.classList.add('correct');
+        overlay.classList.add('text-emerald-500');
+        overlay.classList.remove('text-rose-500');
+      } else {
+        ansDisplay.classList.add('wrong', 'animate-shake');
+        overlay.classList.add('text-rose-500');
+        overlay.classList.remove('text-emerald-500');
+        
+        // Remove shake class after anim to allow replay
+        setTimeout(() => ansDisplay.classList.remove('animate-shake'), 400);
+      }
+    }
+
+    window.quitGame = () => {
+      clearInterval(state.timerInterval);
+      endGame();
+    };
+
+    function endGame() {
+      window.showView('view-result');
+
+      const total = state.correctCount + state.wrongCount;
+      const acc = total > 0 ? Math.round((state.correctCount / total) * 100) : 0;
+
+      // Ensure elements map properly to state
+      document.getElementById('res-accuracy').textContent = acc + '%';
+      document.getElementById('res-correct').textContent = state.correctCount;
+      document.getElementById('res-wrong').textContent = state.wrongCount;
+      document.getElementById('res-streak').textContent = state.bestStreak;
+
+      const from = document.getElementById('range-from').value;
+      const to   = document.getElementById('range-to').value;
+      document.getElementById('res-range').textContent = `${from}–${to}`;
+
+      let emoji = '😤', title = 'Keep Practicing!', sub = 'You got this next time!';
+      if (acc === 100 && total > 0) { emoji = '🏆'; title = 'Perfect Score!'; sub = 'Absolutely flawless! 🔥'; }
+      else if (acc >= 80) { emoji = '🎯'; title = 'Great Job!'; sub = 'You\'re getting really sharp!'; }
+      else if (acc >= 60) { emoji = '💪'; title = 'Good Effort!'; sub = 'A bit more practice and you\'ll nail it!'; }
+
+      document.getElementById('result-emoji').textContent = emoji;
+      document.getElementById('result-title').textContent = title;
+      document.getElementById('result-sub').textContent = sub;
+      
+      // Determine styling of accuracy block based on performance
+      const accEl = document.getElementById('res-accuracy');
+      accEl.className = 'font-mono text-4xl font-black ' + 
+        (acc >= 80 ? 'text-brand-400' : (acc >= 50 ? 'text-amber-400' : 'text-rose-400'));
+    }
+
+  </script>
+</body>
+</html>
